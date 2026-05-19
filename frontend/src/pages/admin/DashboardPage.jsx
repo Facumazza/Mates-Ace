@@ -163,10 +163,11 @@ export default function DashboardPage() {
   const topProducts = useMemo(() => {
     const map = {}
     ordersMonth.forEach((o) => {
-      o.items.forEach(({ product, quantity }) => {
-        if (!map[product.id]) map[product.id] = { product, qty: 0, revenue: 0 }
-        map[product.id].qty += quantity
-        map[product.id].revenue += product.price * quantity
+      o.items.forEach((item) => {
+        const key = item.productId ?? item.productName
+        if (!map[key]) map[key] = { name: item.productName, qty: 0, revenue: 0 }
+        map[key].qty += item.quantity
+        map[key].revenue += (item.productPrice ?? 0) * item.quantity
       })
     })
     return Object.values(map).sort((a, b) => b.revenue - a.revenue).slice(0, 5)
@@ -270,14 +271,14 @@ export default function DashboardPage() {
             <p className="text-white/25 text-sm">Sin datos aún</p>
           ) : (
             <div className="flex flex-col gap-4">
-              {topProducts.map(({ product, qty, revenue }, i) => {
+              {topProducts.map(({ name, qty, revenue }, i) => {
                 const maxRev = topProducts[0]?.revenue || 1
                 return (
-                  <div key={product.id} className="flex flex-col gap-1.5">
+                  <div key={name} className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="text-white/20 text-xs font-bold w-4 flex-shrink-0">#{i + 1}</span>
-                        <span className="text-white text-xs font-medium truncate">{product.name}</span>
+                        <span className="text-white text-xs font-medium truncate">{name}</span>
                       </div>
                       <span className="text-olive-400 text-xs font-semibold flex-shrink-0 ml-2">{formatPrice(revenue)}</span>
                     </div>
@@ -341,7 +342,7 @@ export default function DashboardPage() {
                         <div className="flex flex-col gap-0.5">
                           {order.items.slice(0, 2).map((item, j) => (
                             <span key={j} className="text-white text-xs truncate max-w-[180px]">
-                              {item.product.name} ×{item.quantity}
+                              {item.productName} ×{item.quantity}
                             </span>
                           ))}
                           {order.items.length > 2 && (
@@ -377,18 +378,26 @@ export default function DashboardPage() {
                       </td>
                       <td className="px-5 py-4">
                         {order.status === 'pendiente_transferencia' && (
-                          <button
-                            onClick={() => handleConfirmTransfer(order.id)}
-                            disabled={confirming === order.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-semibold transition-all duration-200 disabled:opacity-50 whitespace-nowrap"
-                          >
-                            {confirming === order.id ? (
-                              <span className="w-3 h-3 border border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
-                            ) : (
-                              <CheckCircle2 size={12} />
-                            )}
-                            Confirmar
-                          </button>
+                          <div className="flex flex-col gap-1.5">
+                            <p className="text-white/40 text-[10px]">
+                              Verificar titular:
+                            </p>
+                            <p className="text-amber-300 text-xs font-semibold">
+                              {order.shippingFirstName} {order.shippingLastName}
+                            </p>
+                            <button
+                              onClick={() => handleConfirmTransfer(order.id)}
+                              disabled={confirming === order.id}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-semibold transition-all duration-200 disabled:opacity-50 whitespace-nowrap"
+                            >
+                              {confirming === order.id ? (
+                                <span className="w-3 h-3 border border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+                              ) : (
+                                <CheckCircle2 size={12} />
+                              )}
+                              Confirmar pago
+                            </button>
+                          </div>
                         )}
                       </td>
                     </motion.tr>

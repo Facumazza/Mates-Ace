@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -14,10 +14,8 @@ export default function AdminLogin() {
   const currentUser = useAuthStore((s) => s.currentUser)
   const navigate = useNavigate()
 
-  // Si ya hay un admin logueado, redirigir directo
   if (currentUser?.role === 'ADMIN') {
-    navigate('/admin/dashboard', { replace: true })
-    return null
+    return <Navigate to="/admin/dashboard" replace />
   }
 
   const handleSubmit = async (e) => {

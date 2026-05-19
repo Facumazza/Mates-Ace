@@ -198,15 +198,12 @@ export default function CartSidebar() {
                   </div>
                 </div>
 
-                {/* Checkout via Mercado Pago */}
+                {/* Checkout */}
                 <button
                   onClick={() => setCheckoutOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 bg-[#009ee3] hover:bg-[#008bc9] text-white font-semibold py-4 rounded-2xl transition-colors duration-200 shadow-lg shadow-blue-500/20"
+                  className="w-full flex items-center justify-center gap-2 bg-olive-600 hover:bg-olive-500 text-white font-semibold py-4 rounded-2xl transition-colors duration-200 shadow-lg shadow-olive-600/20"
                 >
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
-                    <path d="M12 0C5.374 0 0 5.373 0 12c0 6.628 5.374 12 12 12 6.629 0 12-5.372 12-12C24 5.373 18.629 0 12 0zm4.844 7.695l-1.477 6.885c-.113.51-.415.635-.84.394l-2.32-1.71-.32 1.618c-.04.186-.153.352-.306.445l-.027.016c-.105.063-.225.105-.356.105a.65.65 0 01-.39-.132l-2.083-1.626-1.246 1.2c-.138.133-.325.21-.525.21-.093 0-.187-.017-.275-.053l.284-1.915 4.848-4.374c.21-.19.014-.294-.325-.104L6.22 12.617l-1.872-.594c-.406-.13-.413-.404.086-.598l7.304-2.814c.34-.13.638.082.538.512-.062.27-.11.486-.145.646-.01.042-.018.08-.025.112z"/>
-                  </svg>
-                  Pagar con Mercado Pago
+                  Ir a pagar
                 </button>
 
                 {/* WhatsApp checkout */}

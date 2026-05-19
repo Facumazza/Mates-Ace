@@ -69,17 +69,17 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Admin login */}
-        <Route path="/admin" element={<AdminLogin />} />
-
-        {/* Admin panel (protegido) */}
-        <Route path="/admin" element={<RequireAdmin><AdminLayout /></RequireAdmin>}>
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="productos" element={<ProductsAdminPage />} />
-          <Route path="productos/nuevo" element={<ProductFormPage />} />
-          <Route path="productos/editar/:id" element={<ProductFormPage />} />
-          <Route path="ordenes" element={<DashboardPage />} />
-          <Route path="resenas" element={<ReviewsAdminPage />} />
+        {/* Admin */}
+        <Route path="/admin">
+          <Route index element={<AdminLogin />} />
+          <Route element={<RequireAdmin><AdminLayout /></RequireAdmin>}>
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="productos" element={<ProductsAdminPage />} />
+            <Route path="productos/nuevo" element={<ProductFormPage />} />
+            <Route path="productos/editar/:id" element={<ProductFormPage />} />
+            <Route path="ordenes" element={<DashboardPage />} />
+            <Route path="resenas" element={<ReviewsAdminPage />} />
+          </Route>
         </Route>
 
         {/* Tienda pública */}

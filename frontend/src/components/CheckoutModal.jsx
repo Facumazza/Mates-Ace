@@ -1,11 +1,25 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, User, Phone, MapPin, Mail, CreditCard, AlertCircle, Landmark, Copy, Check, CheckCircle2 } from 'lucide-react'
+import { X, User, Phone, MapPin, Mail, AlertCircle, Landmark, Copy, Check, CheckCircle2, Hash, Building2 } from 'lucide-react'
 import { useCartStore } from '../store/useCartStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { formatPrice } from '../data/products'
 
-function Field({ icon: Icon, placeholder, value, onChange, type = 'text' }) {
+const PROVINCIAS = [
+  'Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba',
+  'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja',
+  'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan',
+  'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero',
+  'Tierra del Fuego', 'Tucumán',
+]
+
+function validatePhone(phone) {
+  const digits = phone.replace(/\D/g, '')
+  // Argentina: 10 dígitos (área + número sin prefijos) o 11 (con 0) o hasta 13 (con +54)
+  return digits.length >= 10 && digits.length <= 13
+}
+
+function Field({ icon: Icon, placeholder, value, onChange, type = 'text', error }) {
   return (
     <div className="relative">
       <Icon size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-matte-black/30 pointer-events-none" />
@@ -14,8 +28,27 @@ function Field({ icon: Icon, placeholder, value, onChange, type = 'text' }) {
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-gray-200 text-sm text-matte-black placeholder-matte-black/30 focus:outline-none focus:ring-2 focus:ring-olive-400 focus:border-transparent transition-all"
+        className={`w-full pl-11 pr-4 py-3.5 rounded-xl border text-sm text-matte-black placeholder-matte-black/30 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+          error
+            ? 'border-red-400 focus:ring-red-300 bg-red-50'
+            : 'border-gray-200 focus:ring-olive-400'
+        }`}
       />
+    </div>
+  )
+}
+
+function SelectField({ icon: Icon, value, onChange, children }) {
+  return (
+    <div className="relative">
+      <Icon size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-matte-black/30 pointer-events-none z-10" />
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-gray-200 text-sm text-matte-black focus:outline-none focus:ring-2 focus:ring-olive-400 focus:border-transparent transition-all appearance-none bg-white"
+      >
+        {children}
+      </select>
     </div>
   )
 }
@@ -43,6 +76,18 @@ function CopyField({ label, value }) {
   )
 }
 
+const EMPTY_FORM = {
+  email: '',
+  firstName: '',
+  lastName: '',
+  phone: '',
+  street: '',
+  floor: '',
+  city: '',
+  province: '',
+  postalCode: '',
+}
+
 export default function CheckoutModal({ open, onClose }) {
   const items = useCartStore((s) => s.items)
   const clearCart = useCartStore((s) => s.clearCart)
@@ -50,21 +95,42 @@ export default function CheckoutModal({ open, onClose }) {
   const token = useAuthStore((s) => s.token)
   const currentUser = useAuthStore((s) => s.currentUser)
 
-  const [form, setForm] = useState({
-    email: currentUser?.email ?? '',
-    firstName: '',
-    lastName: '',
-    phone: '',
-    address: '',
-  })
-  const [paymentMethod, setPaymentMethod] = useState('mp')
+  const [form, setForm] = useState({ ...EMPTY_FORM, email: currentUser?.email ?? '' })
+  const [phoneError, setPhoneError] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [transferResult, setTransferResult] = useState(null)
 
   const setField = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
+
+  const handlePhoneBlur = () => {
+    if (form.phone && !validatePhone(form.phone)) {
+      setPhoneError('Ingresá un número de teléfono argentino válido (ej: 1123456789)')
+    } else {
+      setPhoneError('')
+    }
+  }
+
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
-  const filled = Object.values(form).every((v) => v.trim().length > 0)
+
+  const requiredFilled =
+    form.email.trim() &&
+    form.firstName.trim() &&
+    form.lastName.trim() &&
+    form.phone.trim() &&
+    form.street.trim() &&
+    form.city.trim() &&
+    form.province &&
+    form.postalCode.trim()
+
+  const canSubmit = requiredFilled && !phoneError
+
+  const buildAddress = () => {
+    const parts = [form.street]
+    if (form.floor.trim()) parts.push(form.floor.trim())
+    parts.push(form.city.trim(), form.province, `CP ${form.postalCode.trim()}`)
+    return parts.join(', ')
+  }
 
   const buildItems = () => items.map((i) => ({
     name: i.product.name,
@@ -79,48 +145,32 @@ export default function CheckoutModal({ open, onClose }) {
     shippingFirstName: form.firstName,
     shippingLastName: form.lastName,
     shippingPhone: form.phone,
-    shippingAddress: form.address,
+    shippingAddress: buildAddress(),
   })
 
   const handlePay = async () => {
+    if (!validatePhone(form.phone)) {
+      setPhoneError('Ingresá un número de teléfono argentino válido (ej: 1123456789)')
+      return
+    }
     setError('')
     setLoading(true)
     try {
-      if (paymentMethod === 'mp') {
-        const res = await fetch('/api/checkout/mp', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ items: buildItems(), ...buildShipping() }),
-        })
-        const data = await res.json()
-        if (data.url) {
-          clearCart()
-          closeCart()
-          onClose()
-          window.location.href = data.url
-        } else {
-          setError(data.error || 'No se pudo conectar con MercadoPago.')
-        }
+      const res = await fetch('/api/checkout/transferencia', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ items: buildItems(), ...buildShipping() }),
+      })
+      const data = await res.json()
+      if (data.orderId) {
+        clearCart()
+        closeCart()
+        setTransferResult(data)
       } else {
-        const res = await fetch('/api/checkout/transferencia', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ items: buildItems(), ...buildShipping() }),
-        })
-        const data = await res.json()
-        if (data.orderId) {
-          clearCart()
-          closeCart()
-          setTransferResult(data)
-        } else {
-          setError(data.error || 'No se pudo crear el pedido.')
-        }
+        setError(data.error || 'No se pudo crear el pedido.')
       }
     } catch {
       setError('Error al procesar el pedido. Intentá de nuevo.')
@@ -150,17 +200,15 @@ export default function CheckoutModal({ open, onClose }) {
             exit={{ opacity: 0, scale: 0.96, y: 16 }}
             transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden relative"
+            className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden relative max-h-[90vh] flex flex-col"
           >
             {/* Top bar */}
-            <div className="h-1.5 bg-gradient-to-r from-olive-600 via-sand-500 to-leather-500" />
+            <div className="h-1.5 bg-gradient-to-r from-olive-600 via-sand-500 to-leather-500 flex-shrink-0" />
 
-            <div className="p-7">
+            <div className="p-7 overflow-y-auto">
               {transferResult ? (
-                /* ── Transfer success screen ── */
                 <TransferSuccess result={transferResult} onClose={handleClose} />
               ) : (
-                /* ── Checkout form ── */
                 <>
                   <div className="flex items-center justify-between mb-6">
                     <div>
@@ -169,21 +217,49 @@ export default function CheckoutModal({ open, onClose }) {
                     </div>
                     <button
                       onClick={handleClose}
-                      className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-matte-black/50 transition-colors"
+                      className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-matte-black/50 transition-colors flex-shrink-0"
                     >
                       <X size={14} />
                     </button>
                   </div>
 
-                  {/* Form */}
                   <div className="flex flex-col gap-3 mb-5">
+                    {/* Contacto */}
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-matte-black/35">Contacto</p>
                     <Field icon={Mail} placeholder="Email" value={form.email} onChange={setField('email')} type="email" />
                     <div className="grid grid-cols-2 gap-3">
                       <Field icon={User} placeholder="Nombre" value={form.firstName} onChange={setField('firstName')} />
                       <Field icon={User} placeholder="Apellido" value={form.lastName} onChange={setField('lastName')} />
                     </div>
-                    <Field icon={Phone} placeholder="Número de celular" value={form.phone} onChange={setField('phone')} type="tel" />
-                    <Field icon={MapPin} placeholder="Dirección completa" value={form.address} onChange={setField('address')} />
+                    <div>
+                      <Field
+                        icon={Phone}
+                        placeholder="Teléfono (ej: 1123456789)"
+                        value={form.phone}
+                        onChange={(e) => { setField('phone')(e); setPhoneError('') }}
+                        onBlur={handlePhoneBlur}
+                        type="tel"
+                        error={!!phoneError}
+                      />
+                      {phoneError && (
+                        <p className="text-red-500 text-xs mt-1 pl-1">{phoneError}</p>
+                      )}
+                    </div>
+
+                    {/* Dirección */}
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-matte-black/35 mt-1">Dirección de envío</p>
+                    <Field icon={MapPin} placeholder="Calle y número (ej: Av. Corrientes 1234)" value={form.street} onChange={setField('street')} />
+                    <Field icon={Building2} placeholder="Piso / Departamento (opcional, ej: 3° B)" value={form.floor} onChange={setField('floor')} />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field icon={MapPin} placeholder="Ciudad" value={form.city} onChange={setField('city')} />
+                      <Field icon={Hash} placeholder="Código postal" value={form.postalCode} onChange={setField('postalCode')} />
+                    </div>
+                    <SelectField icon={MapPin} value={form.province} onChange={setField('province')}>
+                      <option value="">Provincia</option>
+                      {PROVINCIAS.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </SelectField>
                   </div>
 
                   {/* Order summary */}
@@ -203,44 +279,6 @@ export default function CheckoutModal({ open, onClose }) {
                     </div>
                   </div>
 
-                  {/* Payment method */}
-                  <div className="mb-5">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-matte-black/40 mb-3">Método de pago</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={() => setPaymentMethod('mp')}
-                        className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
-                          paymentMethod === 'mp'
-                            ? 'border-[#009ee3] bg-[#009ee3]/5'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <CreditCard size={20} className={paymentMethod === 'mp' ? 'text-[#009ee3]' : 'text-matte-black/40'} />
-                        <span className={`text-xs font-semibold ${paymentMethod === 'mp' ? 'text-[#009ee3]' : 'text-matte-black/50'}`}>
-                          Mercado Pago
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => setPaymentMethod('transferencia')}
-                        className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
-                          paymentMethod === 'transferencia'
-                            ? 'border-olive-600 bg-olive-600/5'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <Landmark size={20} className={paymentMethod === 'transferencia' ? 'text-olive-600' : 'text-matte-black/40'} />
-                        <span className={`text-xs font-semibold ${paymentMethod === 'transferencia' ? 'text-olive-600' : 'text-matte-black/50'}`}>
-                          Transferencia
-                        </span>
-                      </button>
-                    </div>
-                    {paymentMethod === 'transferencia' && (
-                      <p className="text-xs text-matte-black/40 mt-2 text-center">
-                        Vas a recibir los datos bancarios para transferir el total.
-                      </p>
-                    )}
-                  </div>
-
                   {/* Error */}
                   <AnimatePresence>
                     {error && (
@@ -253,26 +291,19 @@ export default function CheckoutModal({ open, onClose }) {
                     )}
                   </AnimatePresence>
 
-                  {/* Submit button */}
                   <button
                     onClick={handlePay}
-                    disabled={!filled || loading}
-                    className={`w-full flex items-center justify-center gap-2 text-white font-semibold py-4 rounded-2xl transition-all duration-200 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none ${
-                      paymentMethod === 'mp'
-                        ? 'bg-[#009ee3] hover:bg-[#008bc9] shadow-blue-500/20'
-                        : 'bg-olive-600 hover:bg-olive-500 shadow-olive-600/20'
-                    }`}
+                    disabled={!canSubmit || loading}
+                    className="w-full flex items-center justify-center gap-2 bg-olive-600 hover:bg-olive-500 text-white font-semibold py-4 rounded-2xl transition-all duration-200 shadow-lg shadow-olive-600/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
                   >
                     {loading ? (
                       <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : paymentMethod === 'mp' ? (
-                      <><CreditCard size={16} /> Pagar con Mercado Pago</>
                     ) : (
-                      <><Landmark size={16} /> Confirmar pedido</>
+                      <><Landmark size={16} /> Ir a pagar</>
                     )}
                   </button>
 
-                  {!filled && (
+                  {!canSubmit && (
                     <p className="text-center text-xs text-matte-black/30 mt-3">
                       Completá todos los campos para continuar
                     </p>
