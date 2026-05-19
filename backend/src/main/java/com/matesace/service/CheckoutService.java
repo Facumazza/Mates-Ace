@@ -36,6 +36,18 @@ public class CheckoutService {
     @Value("${mp.pending-url}")
     private String pendingUrl;
 
+    @Value("${bank.cvu:}")
+    private String bankCvu;
+
+    @Value("${bank.alias:}")
+    private String bankAlias;
+
+    @Value("${bank.name:}")
+    private String bankName;
+
+    @Value("${bank.holder:}")
+    private String bankHolder;
+
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
     private final EmailService emailService;
@@ -166,6 +178,64 @@ public class CheckoutService {
                 });
             } catch (NumberFormatException ignored) {}
         }
+    }
+
+    public Map<String, Object> createTransferOrder(CheckoutRequest req, User user) {
+        List<Resolved> resolved = req.items().stream()
+                .map(i -> new Resolved(i, resolvePrice(i)))
+                .toList();
+
+        for (Resolved r : resolved) {
+            if (r.item().productId() == null) continue;
+            try {
+                long id = Long.parseLong(r.item().productId());
+                productRepository.findById(id).ifPresent(p -> {
+                    if (p.getStock() != null && p.getStock() < r.item().quantity()) {
+                        throw new IllegalStateException(
+                            "Stock insuficiente para \"" + p.getName() + "\". Disponible: " + p.getStock());
+                    }
+                });
+            } catch (NumberFormatException ignored) {}
+        }
+
+        double total = resolved.stream().mapToDouble(r -> r.price() * r.item().quantity()).sum();
+
+        Order order = new Order();
+        if (user != null) order.setUserId(user.getId());
+        order.setTotal(total);
+        order.setChannel("transferencia");
+        order.setStatus("pendiente_transferencia");
+        order.setShippingEmail(req.shippingEmail());
+        order.setShippingFirstName(req.shippingFirstName());
+        order.setShippingLastName(req.shippingLastName());
+        order.setShippingPhone(req.shippingPhone());
+        order.setShippingAddress(req.shippingAddress());
+
+        List<OrderItem> orderItems = resolved.stream().map(r -> {
+            OrderItem item = new OrderItem();
+            item.setOrder(order);
+            item.setProductId(r.item().productId());
+            item.setProductName(r.item().name());
+            item.setProductPrice(r.price());
+            item.setQuantity(r.item().quantity());
+            item.setSubtotal(r.price() * r.item().quantity());
+            item.setVariant(r.item().variant());
+            return item;
+        }).toList();
+
+        order.setItems(orderItems);
+        Order saved = orderRepository.save(order);
+
+        Map<String, Object> bankInfo = Map.of(
+            "cvu",    bankCvu,
+            "alias",  bankAlias,
+            "bank",   bankName,
+            "holder", bankHolder
+        );
+
+        emailService.sendTransferInstructions(saved, bankInfo);
+
+        return Map.of("orderId", saved.getId(), "total", total, "bankInfo", bankInfo);
     }
 
     private double resolvePrice(CheckoutRequest.CheckoutItem item) {

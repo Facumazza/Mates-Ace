@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { TrendingUp, ShoppingBag, DollarSign, Calendar, ShoppingCart } from 'lucide-react'
+import { TrendingUp, ShoppingBag, DollarSign, Calendar, ShoppingCart, CheckCircle2, Landmark } from 'lucide-react'
 import { useOrdersStore } from '../../store/useOrdersStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { formatPrice } from '../../data/products'
@@ -93,14 +93,18 @@ function EmptyOrders() {
 }
 
 const STATUS_LABELS = {
-  pendiente:   { label: 'Pendiente',   cls: 'bg-sand-500/15 text-sand-400' },
-  completado:  { label: 'Completado',  cls: 'bg-green-500/15 text-green-400' },
-  enviado:     { label: 'Enviado',     cls: 'bg-blue-500/15 text-blue-400' },
+  pendiente:               { label: 'Pendiente',          cls: 'bg-sand-500/15 text-sand-400' },
+  pendiente_transferencia: { label: 'Esperando transferencia', cls: 'bg-amber-500/15 text-amber-400' },
+  procesando:              { label: 'Procesando',         cls: 'bg-olive-500/15 text-olive-400' },
+  completado:              { label: 'Completado',         cls: 'bg-green-500/15 text-green-400' },
+  enviado:                 { label: 'Enviado',            cls: 'bg-blue-500/15 text-blue-400' },
+  cancelado:               { label: 'Cancelado',          cls: 'bg-red-500/15 text-red-400' },
 }
 
 const CHANNEL_LABELS = {
-  mercadopago: 'Mercado Pago',
-  whatsapp:    'WhatsApp',
+  mercadopago:  'Mercado Pago',
+  transferencia: 'Transferencia',
+  whatsapp:     'WhatsApp',
 }
 
 const PERIODS = [
@@ -114,8 +118,18 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState('week')
   const orders = useOrdersStore((s) => s.orders)
   const fetchAllOrders = useOrdersStore((s) => s.fetchAllOrders)
+  const updateStatus = useOrdersStore((s) => s.updateStatus)
   const token = useAuthStore((s) => s.token)
   const now = new Date()
+  const [confirming, setConfirming] = useState(null)
+
+  const handleConfirmTransfer = async (orderId) => {
+    setConfirming(orderId)
+    try { await updateStatus(orderId, 'procesando', token) }
+    finally { setConfirming(null) }
+  }
+
+  const pendingTransfers = orders.filter((o) => o.status === 'pendiente_transferencia')
 
   useEffect(() => { fetchAllOrders(token) }, [token])
 
@@ -184,6 +198,27 @@ export default function DashboardPage() {
           ))}
         </div>
       </div>
+
+      {/* Pending transfers alert */}
+      {pendingTransfers.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl px-5 py-4"
+        >
+          <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+            <Landmark size={16} className="text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-amber-400 font-semibold text-sm">
+              {pendingTransfers.length === 1
+                ? '1 transferencia esperando confirmación'
+                : `${pendingTransfers.length} transferencias esperando confirmación`}
+            </p>
+            <p className="text-amber-400/60 text-xs mt-0.5">Confirmá el pago desde la tabla de órdenes.</p>
+          </div>
+        </motion.div>
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -282,7 +317,7 @@ export default function DashboardPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/5">
-                  {['#', 'Productos', 'Cliente', 'Canal', 'Total', 'Estado', 'Fecha'].map((h) => (
+                  {['#', 'Productos', 'Cliente', 'Canal', 'Total', 'Estado', 'Fecha', ''].map((h) => (
                     <th key={h} className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white/25">
                       {h}
                     </th>
@@ -339,6 +374,22 @@ export default function DashboardPage() {
                       <td className="px-5 py-4 text-white/30 text-xs">
                         {date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })}{' '}
                         <span className="text-white/15">{date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </td>
+                      <td className="px-5 py-4">
+                        {order.status === 'pendiente_transferencia' && (
+                          <button
+                            onClick={() => handleConfirmTransfer(order.id)}
+                            disabled={confirming === order.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-semibold transition-all duration-200 disabled:opacity-50 whitespace-nowrap"
+                          >
+                            {confirming === order.id ? (
+                              <span className="w-3 h-3 border border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+                            ) : (
+                              <CheckCircle2 size={12} />
+                            )}
+                            Confirmar
+                          </button>
+                        )}
                       </td>
                     </motion.tr>
                   )

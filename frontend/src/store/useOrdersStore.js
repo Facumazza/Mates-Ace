@@ -25,6 +25,12 @@ export const useOrdersStore = create((set) => ({
     }
   },
 
+  updateStatus: async (id, status, token) => {
+    const updated = await api.put(`/orders/${id}/status`, { status }, token)
+    set((s) => ({ orders: s.orders.map((o) => (o.id === updated.id ? updated : o)) }))
+    return updated
+  },
+
   addOrder: async (items, total, channel, token, shipping = {}) => {
     const payload = {
       total,

@@ -65,6 +65,59 @@ public class EmailService {
         }
     }
 
+    public void sendTransferInstructions(Order order, Map<String, Object> bankInfo) {
+        String to = order.getShippingEmail();
+        if (to == null || to.isBlank()) return;
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(to);
+            helper.setSubject("Datos para tu transferencia - Pedido #" + order.getId() + " - Mates Ace");
+            helper.setText(buildTransferHtml(order, bankInfo), true);
+            mailSender.send(msg);
+        } catch (Exception e) {
+            // No interrumpir el flujo si el email falla
+        }
+    }
+
+    private String buildTransferHtml(Order order, Map<String, Object> bankInfo) {
+        String cvu    = String.valueOf(bankInfo.getOrDefault("cvu", ""));
+        String alias  = String.valueOf(bankInfo.getOrDefault("alias", ""));
+        String bank   = String.valueOf(bankInfo.getOrDefault("bank", ""));
+        String holder = String.valueOf(bankInfo.getOrDefault("holder", ""));
+        return baseTemplate("""
+            <h2 style="color:#4a5c2f;font-size:22px;margin:0 0 8px;">¡Pedido recibido!</h2>
+            <p style="color:#666;font-size:15px;margin:0 0 24px;">
+              Hola %s, recibimos tu pedido. Para confirmarlo, realizá la transferencia con los siguientes datos.
+              Una vez que acreditemos el pago, te notificamos y preparamos tu envío.
+            </p>
+            <div style="background:#f9f7f2;border-radius:12px;padding:20px;margin-bottom:16px;">
+              <p style="margin:0 0 12px;font-size:12px;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Datos bancarios</p>
+              <table width="100%%" cellpadding="0" cellspacing="0">
+                <tr><td style="padding:6px 0;font-size:14px;color:#888;">Banco</td>       <td style="padding:6px 0;font-size:14px;color:#1a1a1a;font-weight:600;">%s</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#888;">Titular</td>     <td style="padding:6px 0;font-size:14px;color:#1a1a1a;font-weight:600;">%s</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#888;">CVU</td>         <td style="padding:6px 0;font-size:14px;color:#1a1a1a;font-weight:600;font-family:monospace;">%s</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#888;">Alias</td>       <td style="padding:6px 0;font-size:14px;color:#1a1a1a;font-weight:600;">%s</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#888;">Referencia</td>  <td style="padding:6px 0;font-size:14px;color:#1a1a1a;font-weight:600;">Pedido #%d</td></tr>
+                <tr><td colspan="2" style="border-top:1px solid #e8e0d0;padding-top:10px;"></td></tr>
+                <tr>
+                  <td style="padding:8px 0;font-weight:700;font-size:15px;color:#1a1a1a;">Total a transferir</td>
+                  <td style="padding:8px 0;font-weight:700;font-size:15px;color:#4a5c2f;text-align:right;">%s</td>
+                </tr>
+              </table>
+            </div>
+            <p style="color:#999;font-size:13px;margin:0;">
+              En el concepto de la transferencia podés poner el número de pedido para ayudarnos a identificarla más rápido.
+            </p>
+            """.formatted(
+                order.getShippingFirstName() != null ? order.getShippingFirstName() : "",
+                bank, holder, cvu, alias,
+                order.getId(),
+                formatPrice(order.getTotal())
+        ));
+    }
+
     private String buildConfirmationHtml(Order order) {
         StringBuilder rows = new StringBuilder();
         if (order.getItems() != null) {

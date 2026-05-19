@@ -30,6 +30,17 @@ public class CheckoutController {
         }
     }
 
+    @PostMapping("/transferencia")
+    public ResponseEntity<?> createTransferOrder(@RequestBody CheckoutRequest req,
+                                                 @AuthenticationPrincipal User user) {
+        try {
+            Map<String, Object> result = checkoutService.createTransferOrder(req, user);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/webhook")
     public ResponseEntity<?> webhook(@RequestBody Map<String, Object> body) {
         try {
