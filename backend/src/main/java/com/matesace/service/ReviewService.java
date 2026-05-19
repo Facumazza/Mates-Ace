@@ -16,15 +16,19 @@ public class ReviewService {
     public ReviewService(ReviewRepository repo) { this.repo = repo; }
 
     public List<Review> getAll() {
+        return repo.findByHiddenFalseOrderByCreatedAtDesc();
+    }
+
+    public List<Review> getAllForAdmin() {
         return repo.findAllByOrderByCreatedAtDesc();
     }
 
     public List<Review> getByProduct(String productId) {
-        return repo.findByProductIdOrderByCreatedAtDesc(productId);
+        return repo.findByProductIdAndHiddenFalseOrderByCreatedAtDesc(productId);
     }
 
     public Map<String, Object> getSummary() {
-        long count = repo.count();
+        long count = repo.findByHiddenFalseOrderByCreatedAtDesc().size();
         Double avg = repo.averageRating();
         return Map.of(
             "count", count,
@@ -33,12 +37,18 @@ public class ReviewService {
     }
 
     public Map<String, Object> getSummaryByProduct(String productId) {
-        long count = repo.findByProductIdOrderByCreatedAtDesc(productId).size();
+        long count = repo.findByProductIdAndHiddenFalseOrderByCreatedAtDesc(productId).size();
         Double avg = repo.averageRatingByProductId(productId);
         return Map.of(
             "count", count,
             "average", avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0
         );
+    }
+
+    public Review toggleHidden(Long id) {
+        Review review = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Reseña no encontrada."));
+        review.setHidden(!review.isHidden());
+        return repo.save(review);
     }
 
     public Review create(User user, int rating, String comment, String productId) {

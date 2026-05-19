@@ -26,6 +26,9 @@ public class Review {
     private String comment;
 
     @Column(nullable = false)
+    private boolean hidden = false;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public Long getId() { return id; }
@@ -40,4 +43,6 @@ public class Review {
     public String getComment() { return comment; }
     public void setComment(String comment) { this.comment = comment; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public boolean isHidden() { return hidden; }
+    public void setHidden(boolean hidden) { this.hidden = hidden; }
 }

@@ -1,24 +1,31 @@
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, Package, LogOut, ChevronRight, ExternalLink,
-  PlusCircle, Menu, X
+  PlusCircle, Menu, X, Star
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/useAuthStore'
 import clsx from 'clsx'
 
 const NAV = [
-  { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-  { label: 'Productos',  href: '/admin/productos',  icon: Package },
+  { label: 'Dashboard',      href: '/admin/dashboard',  icon: LayoutDashboard },
+  { label: 'Productos',      href: '/admin/productos',  icon: Package },
   { label: 'Nuevo producto', href: '/admin/productos/nuevo', icon: PlusCircle },
+  { label: 'Reseñas',        href: '/admin/resenas',    icon: Star },
 ]
 
 export default function AdminLayout() {
   const currentUser = useAuthStore((s) => s.currentUser)
   const logout = useAuthStore((s) => s.logout)
   const location = useLocation()
+  const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -71,7 +78,7 @@ export default function AdminLayout() {
           Ver tienda
         </a>
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400/60 hover:text-red-400 hover:bg-red-400/5 transition-all duration-200 w-full text-left"
         >
           <LogOut size={15} />

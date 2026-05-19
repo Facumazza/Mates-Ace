@@ -19,6 +19,7 @@ import AdminLayout from './pages/admin/AdminLayout'
 import DashboardPage from './pages/admin/DashboardPage'
 import ProductsAdminPage from './pages/admin/ProductsAdminPage'
 import ProductFormPage from './pages/admin/ProductFormPage'
+import ReviewsAdminPage from './pages/admin/ReviewsAdminPage'
 import PagoExitosoPage from './pages/PagoExitosoPage'
 import PagoFallidoPage from './pages/PagoFallidoPage'
 import PagoPendientePage from './pages/PagoPendientePage'
@@ -78,6 +79,7 @@ export default function App() {
           <Route path="productos/nuevo" element={<ProductFormPage />} />
           <Route path="productos/editar/:id" element={<ProductFormPage />} />
           <Route path="ordenes" element={<DashboardPage />} />
+          <Route path="resenas" element={<ReviewsAdminPage />} />
         </Route>
 
         {/* Tienda pública */}

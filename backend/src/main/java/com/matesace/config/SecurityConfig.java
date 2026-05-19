@@ -54,6 +54,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/checkout/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/reviews/*/hidden").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")

@@ -1,46 +1,62 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { api } from '../api/client'
 import { PRODUCTS } from '../data/products'
 
-// Los productos base (PRODUCTS) siguen siendo locales (catálogo estático).
-// Los productos del admin se guardan en el backend y se sincronizan aquí.
-export const useAdminStore = create((set, get) => ({
-  adminProducts: [],
-  loading: false,
+export const useAdminStore = create(
+  persist(
+    (set, get) => ({
+      adminProducts: [],
+      hiddenBaseIds: [],
+      loading: false,
 
-  fetchAdminProducts: async (token) => {
-    set({ loading: true })
-    try {
-      const data = await api.get('/products', token)
-      set({ adminProducts: data, loading: false })
-    } catch {
-      set({ loading: false })
+      fetchAdminProducts: async (token) => {
+        set({ loading: true })
+        try {
+          const data = await api.get('/products', token)
+          set({ adminProducts: data, loading: false })
+        } catch {
+          set({ loading: false })
+        }
+      },
+
+      getAllProducts: () => {
+        const hidden = get().hiddenBaseIds
+        const base = PRODUCTS.filter((p) => !hidden.includes(p.id))
+        return [...base, ...get().adminProducts]
+      },
+
+      addProduct: async (data, token) => {
+        const payload = buildPayload(data)
+        const product = await api.post('/products', payload, token)
+        set((s) => ({ adminProducts: [...s.adminProducts, product] }))
+        return product
+      },
+
+      updateProduct: async (id, data, token) => {
+        const payload = buildPayload(data)
+        const product = await api.put(`/products/${id}`, payload, token)
+        set((s) => ({
+          adminProducts: s.adminProducts.map((p) => (p.id === id ? product : p)),
+        }))
+        return product
+      },
+
+      deleteAdminProduct: async (id, token) => {
+        await api.delete(`/products/${id}`, token)
+        set((s) => ({ adminProducts: s.adminProducts.filter((p) => p.id !== id) }))
+      },
+
+      hideBaseProduct: (id) => {
+        set((s) => ({ hiddenBaseIds: [...s.hiddenBaseIds, id] }))
+      },
+    }),
+    {
+      name: 'mates-ace-admin',
+      partialize: (s) => ({ hiddenBaseIds: s.hiddenBaseIds }),
     }
-  },
-
-  getAllProducts: () => [...PRODUCTS, ...get().adminProducts],
-
-  addProduct: async (data, token) => {
-    const payload = buildPayload(data)
-    const product = await api.post('/products', payload, token)
-    set((s) => ({ adminProducts: [...s.adminProducts, product] }))
-    return product
-  },
-
-  updateProduct: async (id, data, token) => {
-    const payload = buildPayload(data)
-    const product = await api.put(`/products/${id}`, payload, token)
-    set((s) => ({
-      adminProducts: s.adminProducts.map((p) => (p.id === id ? product : p)),
-    }))
-    return product
-  },
-
-  deleteAdminProduct: async (id, token) => {
-    await api.delete(`/products/${id}`, token)
-    set((s) => ({ adminProducts: s.adminProducts.filter((p) => p.id !== id) }))
-  },
-}))
+  )
+)
 
 function generateSlug(name) {
   return name

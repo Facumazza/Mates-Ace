@@ -67,7 +67,7 @@ export default function Categories() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"
         >
           {/* First large card */}
           {CATEGORIES.slice(0, 1).map((cat) => (
@@ -83,7 +83,7 @@ export default function Categories() {
             </motion.div>
           ))}
 
-          {/* Last large card */}
+          {/* Last card */}
           {CATEGORIES.slice(4).map((cat) => (
             <motion.div key={cat.id} variants={cardVariants}>
               <CategoryCard cat={cat} />

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { useAdminStore } from '../../store/useAdminStore'
 import { useAuthStore } from '../../store/useAuthStore'
-import { formatPrice } from '../../data/products'
+import { PRODUCTS, formatPrice } from '../../data/products'
 import clsx from 'clsx'
 
 const CATEGORIES = ['mates', 'termos', 'bombillas', 'combos', 'accesorios']
@@ -57,15 +57,21 @@ export default function ProductFormPage() {
   const navigate = useNavigate()
   const addProduct = useAdminStore((s) => s.addProduct)
   const updateProduct = useAdminStore((s) => s.updateProduct)
+  const fetchAdminProducts = useAdminStore((s) => s.fetchAdminProducts)
   const adminProducts = useAdminStore((s) => s.adminProducts)
   const token = useAuthStore((s) => s.token)
   const fileRef = useRef()
 
-  const existing = id ? adminProducts.find((p) => p.id === Number(id)) : null
+  const allProducts = [...PRODUCTS, ...adminProducts]
+  const existing = id ? allProducts.find((p) => String(p.id) === id) : null
+  const isBackendProduct = id ? adminProducts.some((p) => String(p.id) === id) : false
 
-  const [form, setForm] = useState(() => {
+  const [form, setForm] = useState(EMPTY_FORM)
+
+  // Populate form once the product is found (handles direct URL access)
+  useEffect(() => {
     if (existing) {
-      return {
+      setForm({
         ...EMPTY_FORM,
         ...existing,
         price: String(existing.price),
@@ -73,10 +79,14 @@ export default function ProductFormPage() {
         stock: existing.stock != null ? String(existing.stock) : '',
         featuresList: existing.features?.length ? existing.features : [''],
         variants: existing.variants || [],
-      }
+      })
     }
-    return EMPTY_FORM
-  })
+  }, [existing?.id, adminProducts.length])
+
+  // Fetch backend products if navigated directly to this URL
+  useEffect(() => {
+    if (id) fetchAdminProducts(token)
+  }, [id])
 
   const [errors, setErrors] = useState({})
   const [saved, setSaved] = useState(false)
@@ -158,7 +168,7 @@ export default function ProductFormPage() {
     }
 
     try {
-      if (existing) {
+      if (isBackendProduct) {
         await updateProduct(existing.id, data, token)
       } else {
         await addProduct(data, token)
@@ -189,7 +199,11 @@ export default function ProductFormPage() {
             {existing ? 'Editar producto' : 'Nuevo producto'}
           </h1>
           <p className="text-white/30 text-sm mt-0.5">
-            {existing ? `Editando: ${existing.name}` : 'Completá los campos para agregar un producto a la tienda.'}
+            {isBackendProduct
+              ? `Editando: ${existing.name}`
+              : existing
+                ? `Guardando copia editable de: ${existing.name}`
+                : 'Completá los campos para agregar un producto a la tienda.'}
           </p>
         </div>
       </div>

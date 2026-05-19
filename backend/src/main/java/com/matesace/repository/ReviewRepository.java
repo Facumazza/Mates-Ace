@@ -8,13 +8,15 @@ import java.util.List;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findAllByOrderByCreatedAtDesc();
+    List<Review> findByHiddenFalseOrderByCreatedAtDesc();
     List<Review> findByProductIdOrderByCreatedAtDesc(String productId);
+    List<Review> findByProductIdAndHiddenFalseOrderByCreatedAtDesc(String productId);
     List<Review> findByProductIdIsNullOrderByCreatedAtDesc();
     boolean existsByUserId(Long userId);
 
-    @Query("SELECT AVG(r.rating) FROM Review r")
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.hidden = false")
     Double averageRating();
 
-    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.productId = :productId")
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.productId = :productId AND r.hidden = false")
     Double averageRatingByProductId(String productId);
 }

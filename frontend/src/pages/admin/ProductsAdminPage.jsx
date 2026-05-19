@@ -16,6 +16,7 @@ const BADGE_MAP = {
 export default function ProductsAdminPage() {
   const adminProducts = useAdminStore((s) => s.adminProducts)
   const deleteAdminProduct = useAdminStore((s) => s.deleteAdminProduct)
+  const hideBaseProduct = useAdminStore((s) => s.hideBaseProduct)
   const fetchAdminProducts = useAdminStore((s) => s.fetchAdminProducts)
   const token = useAuthStore((s) => s.token)
   const [query, setQuery] = useState('')
@@ -36,8 +37,11 @@ export default function ProductsAdminPage() {
   })
 
   const handleDelete = async (product) => {
-    if (!product._isAdminProduct) return
-    await deleteAdminProduct(product.id, token)
+    if (product._isAdminProduct) {
+      await deleteAdminProduct(product.id, token)
+    } else {
+      hideBaseProduct(product.id)
+    }
     setConfirmDelete(null)
   }
 
@@ -202,26 +206,20 @@ export default function ProductsAdminPage() {
                       {/* Actions */}
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          {product._isAdminProduct ? (
-                            <>
-                              <Link
-                                to={`/admin/productos/editar/${product.id}`}
-                                className="p-2 rounded-lg bg-white/5 hover:bg-olive-600/20 hover:text-olive-400 text-white/40 transition-all duration-200"
-                                title="Editar"
-                              >
-                                <Edit2 size={13} />
-                              </Link>
-                              <button
-                                onClick={() => setConfirmDelete(product)}
-                                className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-white/40 transition-all duration-200"
-                                title="Eliminar"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </>
-                          ) : (
-                            <span className="text-white/15 text-[10px]">Producto base</span>
-                          )}
+                          <Link
+                            to={`/admin/productos/editar/${product.id}`}
+                            className="p-2 rounded-lg bg-white/5 hover:bg-olive-600/20 hover:text-olive-400 text-white/40 transition-all duration-200"
+                            title="Editar"
+                          >
+                            <Edit2 size={13} />
+                          </Link>
+                          <button
+                            onClick={() => setConfirmDelete(product)}
+                            className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-white/40 transition-all duration-200"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={13} />
+                          </button>
                         </div>
                       </td>
                     </motion.tr>

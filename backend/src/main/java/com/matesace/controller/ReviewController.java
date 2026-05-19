@@ -36,6 +36,20 @@ public class ReviewController {
         return ResponseEntity.ok(service.getSummaryByProduct(productId));
     }
 
+    @GetMapping("/admin/all")
+    public ResponseEntity<?> getAllForAdmin() {
+        return ResponseEntity.ok(service.getAllForAdmin());
+    }
+
+    @PatchMapping("/{id}/hidden")
+    public ResponseEntity<?> toggleHidden(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(service.toggleHidden(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping
     public ResponseEntity<?> create(@AuthenticationPrincipal User user,
                                     @RequestBody Map<String, Object> body) {
