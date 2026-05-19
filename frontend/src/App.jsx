@@ -13,6 +13,7 @@ import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import WishlistPage from './pages/WishlistPage'
 import ProfilePage from './pages/ProfilePage'
+import RequireAdmin from './components/RequireAdmin'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminLayout from './pages/admin/AdminLayout'
 import DashboardPage from './pages/admin/DashboardPage'
@@ -70,8 +71,8 @@ export default function App() {
         {/* Admin login */}
         <Route path="/admin" element={<AdminLogin />} />
 
-        {/* Admin panel (layout propio con sidebar) */}
-        <Route path="/admin" element={<AdminLayout />}>
+        {/* Admin panel (protegido) */}
+        <Route path="/admin" element={<RequireAdmin><AdminLayout /></RequireAdmin>}>
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="productos" element={<ProductsAdminPage />} />
           <Route path="productos/nuevo" element={<ProductFormPage />} />

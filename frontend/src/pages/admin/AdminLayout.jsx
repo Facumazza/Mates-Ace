@@ -1,4 +1,4 @@
-import { Navigate, Link, Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, Package, LogOut, ChevronRight, ExternalLink,
@@ -17,11 +17,8 @@ const NAV = [
 export default function AdminLayout() {
   const currentUser = useAuthStore((s) => s.currentUser)
   const logout = useAuthStore((s) => s.logout)
-  const isAuthenticated = currentUser?.role === 'ADMIN'
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  if (!isAuthenticated) return <Navigate to="/admin" replace />
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
