@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Heart, ShoppingBag, Star, Check, ChevronRight } from 'lucide-react'
+import { X, Heart, ShoppingBag, Check, ChevronRight } from 'lucide-react'
 import { useCartStore } from '../store/useCartStore'
 import { useWishlistStore } from '../store/useWishlistStore'
 import { useAuthStore } from '../store/useAuthStore'
@@ -84,16 +84,6 @@ export default function QuickViewModal({ product, onClose }) {
                 <div>
                   <span className="text-xs uppercase tracking-widest text-olive-600 font-semibold">{product.category}</span>
                   <h2 className="font-serif text-2xl font-bold text-matte-black mt-1 leading-tight">{product.name}</h2>
-                </div>
-
-                {/* Rating */}
-                <div className="flex items-center gap-2">
-                  <div className="flex">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={13} className={i < Math.round(product.rating) ? 'fill-sand-400 text-sand-400' : 'fill-gray-200 text-gray-200'} />
-                    ))}
-                  </div>
-                  <span className="text-sm text-matte-black/50">{product.rating} ({product.reviewCount} reseñas)</span>
                 </div>
 
                 {/* Price */}

@@ -13,7 +13,6 @@ const SORT_OPTIONS = [
   { label: 'Precio: mayor a menor', value: 'price-desc' },
   { label: 'Más vendidos', value: 'bestseller' },
   { label: 'Novedades', value: 'new' },
-  { label: 'Mejor valorados', value: 'rating' },
 ]
 
 export default function ShopPage() {

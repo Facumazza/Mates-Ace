@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { TrendingUp, ShoppingBag, DollarSign, Calendar, ShoppingCart, CheckCircle2, Landmark } from 'lucide-react'
+import { TrendingUp, ShoppingBag, DollarSign, Calendar, ShoppingCart, CheckCircle2, Landmark, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useOrdersStore } from '../../store/useOrdersStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { formatPrice } from '../../data/products'
@@ -93,13 +93,28 @@ function EmptyOrders() {
 }
 
 const STATUS_LABELS = {
-  pendiente:               { label: 'Pendiente',          cls: 'bg-sand-500/15 text-sand-400' },
+  pendiente:               { label: 'Pendiente',               cls: 'bg-sand-500/15 text-sand-400' },
   pendiente_transferencia: { label: 'Esperando transferencia', cls: 'bg-amber-500/15 text-amber-400' },
-  procesando:              { label: 'Procesando',         cls: 'bg-olive-500/15 text-olive-400' },
-  completado:              { label: 'Completado',         cls: 'bg-green-500/15 text-green-400' },
-  enviado:                 { label: 'Enviado',            cls: 'bg-blue-500/15 text-blue-400' },
-  cancelado:               { label: 'Cancelado',          cls: 'bg-red-500/15 text-red-400' },
+  procesando:              { label: 'Procesando',              cls: 'bg-olive-500/15 text-olive-400' },
+  enviado:                 { label: 'Enviado',                 cls: 'bg-blue-500/15 text-blue-400' },
+  completado:              { label: 'Completado',              cls: 'bg-green-500/15 text-green-400' },
+  cancelado:               { label: 'Cancelado',               cls: 'bg-red-500/15 text-red-400' },
 }
+
+const STATUS_TRANSITIONS = {
+  pendiente:   ['procesando', 'cancelado'],
+  procesando:  ['enviado', 'cancelado'],
+  enviado:     ['completado', 'cancelado'],
+}
+
+const STATUS_NEXT_LABELS = {
+  procesando: 'Marcar procesando',
+  enviado:    'Marcar enviado',
+  completado: 'Marcar completado',
+  cancelado:  'Cancelar pedido',
+}
+
+const PAGE_SIZE = 15
 
 const CHANNEL_LABELS = {
   mercadopago:  'Mercado Pago',
@@ -122,6 +137,7 @@ export default function DashboardPage() {
   const token = useAuthStore((s) => s.token)
   const now = new Date()
   const [confirming, setConfirming] = useState(null)
+  const [page, setPage] = useState(1)
 
   const handleConfirmTransfer = async (orderId) => {
     setConfirming(orderId)
@@ -129,7 +145,15 @@ export default function DashboardPage() {
     finally { setConfirming(null) }
   }
 
+  const handleStatusChange = async (orderId, status) => {
+    setConfirming(orderId)
+    try { await updateStatus(orderId, status, token) }
+    finally { setConfirming(null) }
+  }
+
   const pendingTransfers = orders.filter((o) => o.status === 'pendiente_transferencia')
+  const totalPages = Math.ceil(orders.length / PAGE_SIZE)
+  const pagedOrders = orders.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   useEffect(() => { fetchAllOrders(token) }, [token])
 
@@ -307,7 +331,7 @@ export default function DashboardPage() {
         className="bg-[#1A1A1A] border border-white/5 rounded-2xl overflow-hidden"
       >
         <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between">
-          <h2 className="font-semibold text-white">Órdenes recientes</h2>
+          <h2 className="font-semibold text-white">Órdenes</h2>
           <span className="text-white/30 text-xs">{orders.length} en total</span>
         </div>
 
@@ -326,7 +350,7 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {orders.slice(0, 20).map((order, i) => {
+                {pagedOrders.map((order, i) => {
                   const st = STATUS_LABELS[order.status] || STATUS_LABELS.pendiente
                   const date = new Date(order.date)
                   return (
@@ -376,12 +400,10 @@ export default function DashboardPage() {
                         {date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })}{' '}
                         <span className="text-white/15">{date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</span>
                       </td>
-                      <td className="px-5 py-4">
-                        {order.status === 'pendiente_transferencia' && (
+                      <td className="px-5 py-4 min-w-[160px]">
+                        {order.status === 'pendiente_transferencia' ? (
                           <div className="flex flex-col gap-1.5">
-                            <p className="text-white/40 text-[10px]">
-                              Verificar titular:
-                            </p>
+                            <p className="text-white/40 text-[10px]">Verificar titular:</p>
                             <p className="text-amber-300 text-xs font-semibold">
                               {order.shippingFirstName} {order.shippingLastName}
                             </p>
@@ -390,14 +412,26 @@ export default function DashboardPage() {
                               disabled={confirming === order.id}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-semibold transition-all duration-200 disabled:opacity-50 whitespace-nowrap"
                             >
-                              {confirming === order.id ? (
-                                <span className="w-3 h-3 border border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
-                              ) : (
-                                <CheckCircle2 size={12} />
-                              )}
+                              {confirming === order.id
+                                ? <span className="w-3 h-3 border border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+                                : <CheckCircle2 size={12} />}
                               Confirmar pago
                             </button>
                           </div>
+                        ) : STATUS_TRANSITIONS[order.status]?.length > 0 && (
+                          <select
+                            disabled={confirming === order.id}
+                            onChange={(e) => { if (e.target.value) handleStatusChange(order.id, e.target.value) }}
+                            value=""
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/50 text-xs focus:outline-none focus:border-olive-500 transition-all disabled:opacity-40 cursor-pointer"
+                          >
+                            <option value="" disabled>Cambiar estado</option>
+                            {STATUS_TRANSITIONS[order.status].map((s) => (
+                              <option key={s} value={s} className="bg-[#1A1A1A]">
+                                {STATUS_NEXT_LABELS[s]}
+                              </option>
+                            ))}
+                          </select>
                         )}
                       </td>
                     </motion.tr>
@@ -405,6 +439,55 @@ export default function DashboardPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-white/5 flex items-center justify-between gap-4">
+            <span className="text-white/30 text-xs">
+              Página {page} de {totalPages} · {orders.length} órdenes
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((n) => n === 1 || n === totalPages || Math.abs(n - page) <= 1)
+                .reduce((acc, n, idx, arr) => {
+                  if (idx > 0 && n - arr[idx - 1] > 1) acc.push('…')
+                  acc.push(n)
+                  return acc
+                }, [])
+                .map((n, i) =>
+                  n === '…' ? (
+                    <span key={`ellipsis-${i}`} className="w-8 text-center text-white/20 text-xs">…</span>
+                  ) : (
+                    <button
+                      key={n}
+                      onClick={() => setPage(n)}
+                      className={`w-8 h-8 rounded-lg text-xs font-medium transition-all duration-150 ${
+                        page === n
+                          ? 'bg-olive-600 text-white'
+                          : 'text-white/40 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  )
+                )}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
           </div>
         )}
       </motion.div>

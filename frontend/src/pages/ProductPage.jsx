@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Heart, ShoppingBag, Star, Check, ChevronRight, ArrowLeft,
+  Heart, ShoppingBag, Check, ChevronRight, ArrowLeft,
   Truck, Shield, RefreshCw, MessageCircle, Share2, Minus, Plus
 } from 'lucide-react'
 import { PRODUCTS, formatPrice } from '../data/products'
@@ -166,17 +166,6 @@ export default function ProductPage() {
               <h1 className="font-serif text-3xl sm:text-4xl font-bold text-matte-black leading-tight mt-2">
                 {product.name}
               </h1>
-            </div>
-
-            {/* Rating */}
-            <div className="flex items-center gap-3">
-              <div className="flex">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} size={16} className={i < Math.round(product.rating) ? 'fill-sand-400 text-sand-400' : 'fill-gray-200 text-gray-200'} />
-                ))}
-              </div>
-              <span className="text-sm font-semibold text-matte-black">{product.rating}</span>
-              <span className="text-sm text-matte-black/40">({product.reviewCount} reseñas)</span>
             </div>
 
             {/* Price */}

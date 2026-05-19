@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PlusCircle, Search, Edit2, Trash2, X, Package, AlertTriangle } from 'lucide-react'
+import { PlusCircle, Search, Edit2, Trash2, X, Package, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAdminStore } from '../../store/useAdminStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { PRODUCTS, formatPrice } from '../../data/products'
 import clsx from 'clsx'
+
+const PAGE_SIZE = 15
 
 const BADGE_MAP = {
   bestseller: 'bg-olive-600/20 text-olive-400',
@@ -20,11 +22,13 @@ export default function ProductsAdminPage() {
   const fetchAdminProducts = useAdminStore((s) => s.fetchAdminProducts)
   const token = useAuthStore((s) => s.token)
   const [query, setQuery] = useState('')
-
-  useEffect(() => { fetchAdminProducts(token) }, [token])
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [tab, setTab] = useState('all')
+  const [page, setPage] = useState(1)
+
+  useEffect(() => { fetchAdminProducts(token) }, [token])
+  useEffect(() => { setPage(1) }, [query, categoryFilter, tab])
 
   const baseProducts = PRODUCTS.map((p) => ({ ...p, _isAdminProduct: false }))
   const allProducts = [...baseProducts, ...adminProducts]
@@ -44,6 +48,9 @@ export default function ProductsAdminPage() {
     }
     setConfirmDelete(null)
   }
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const pagedFiltered = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const categories = ['all', ...new Set(allProducts.map((p) => p.category))]
 
@@ -138,7 +145,7 @@ export default function ProductsAdminPage() {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((product, i) => (
+                  pagedFiltered.map((product, i) => (
                     <motion.tr
                       key={product.id}
                       initial={{ opacity: 0 }}
@@ -229,6 +236,55 @@ export default function ProductsAdminPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-white/5 flex items-center justify-between gap-4">
+            <span className="text-white/30 text-xs">
+              Página {page} de {totalPages} · {filtered.length} productos
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((n) => n === 1 || n === totalPages || Math.abs(n - page) <= 1)
+                .reduce((acc, n, idx, arr) => {
+                  if (idx > 0 && n - arr[idx - 1] > 1) acc.push('…')
+                  acc.push(n)
+                  return acc
+                }, [])
+                .map((n, i) =>
+                  n === '…' ? (
+                    <span key={`ellipsis-${i}`} className="w-8 text-center text-white/20 text-xs">…</span>
+                  ) : (
+                    <button
+                      key={n}
+                      onClick={() => setPage(n)}
+                      className={`w-8 h-8 rounded-lg text-xs font-medium transition-all duration-150 ${
+                        page === n
+                          ? 'bg-olive-600 text-white'
+                          : 'text-white/40 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  )
+                )}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Delete confirm modal */}
