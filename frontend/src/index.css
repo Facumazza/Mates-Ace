@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-warm-white text-matte-black font-sans antialiased;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-warm-white;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-olive-400 rounded-full;
+  }
+
+  ::selection {
+    @apply bg-olive-200 text-olive-900;
+  }
+}
+
+@layer components {
+  .admin-input {
+    @apply w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-white/20 focus:outline-none focus:border-olive-500 transition-all duration-200;
+  }
+
+  .admin-input option {
+    background: #1a1a1a;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-olive-600 hover:bg-olive-700 text-white font-medium px-8 py-4 rounded-full transition-all duration-300 hover:shadow-xl hover:shadow-olive-600/30 hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 border-2 border-white text-white font-medium px-8 py-4 rounded-full transition-all duration-300 hover:bg-white hover:text-matte-black;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 border-2 border-olive-600 text-olive-600 font-medium px-8 py-4 rounded-full transition-all duration-300 hover:bg-olive-600 hover:text-white;
+  }
+
+  .section-heading {
+    @apply font-serif text-4xl md:text-5xl lg:text-6xl font-bold leading-tight;
+  }
+
+  .section-subheading {
+    @apply text-base md:text-lg text-matte-black/60 font-light leading-relaxed;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider;
+  }
+
+  .badge-bestseller {
+    @apply badge bg-olive-600 text-white;
+  }
+
+  .badge-new {
+    @apply badge bg-sand-500 text-white;
+  }
+
+  .badge-sale {
+    @apply badge bg-red-500 text-white;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-2xl hover:-translate-y-1;
+  }
+
+  .nav-link {
+    @apply text-sm font-medium tracking-widest uppercase transition-colors duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-olive-400 focus:border-transparent transition-all duration-200 bg-white;
+  }
+
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #556B3A 0%, #C4883A 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .overlay-dark {
+    background: linear-gradient(
+      135deg,
+      rgba(26, 26, 26, 0.92) 0%,
+      rgba(42, 34, 24, 0.75) 50%,
+      rgba(85, 107, 58, 0.45) 100%
+    );
+  }
+}
+
+@layer utilities {
+  .writing-vertical {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+  }
+
+  .aspect-product {
+    aspect-ratio: 3 / 4;
+  }
+
+  .aspect-hero {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* Swiper custom styles */
+.swiper-pagination-bullet {
+  @apply bg-olive-400 opacity-50 !important;
+}
+.swiper-pagination-bullet-active {
+  @apply bg-olive-600 opacity-100 !important;
+}

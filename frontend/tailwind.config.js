@@ -1,0 +1,71 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        olive: {
+          50:  '#f2f5ee',
+          100: '#dfe8d6',
+          200: '#c0d1ad',
+          300: '#96b37c',
+          400: '#72975a',
+          500: '#556B3A',
+          600: '#4a5e32',
+          700: '#3a4a27',
+          800: '#2f3c21',
+          900: '#27321c',
+          950: '#121a0d',
+        },
+        sand: {
+          50:  '#fdf8f0',
+          100: '#f8eddb',
+          200: '#f0d9b7',
+          300: '#e5bf88',
+          400: '#d9a05a',
+          500: '#C4883A',
+          600: '#a87030',
+          700: '#885828',
+          800: '#6e4522',
+          900: '#5a381d',
+          950: '#2e1c0d',
+        },
+        leather: {
+          50:  '#fdf5ef',
+          100: '#f8e6d4',
+          200: '#f0c9a4',
+          300: '#e5a472',
+          400: '#d87d43',
+          500: '#c4612a',
+          600: '#aa4d22',
+          700: '#8b3c1e',
+          800: '#703120',
+          900: '#5a291c',
+          950: '#30120c',
+        },
+        'warm-white': '#FAF7F2',
+        'matte-black': '#1A1A1A',
+      },
+      fontFamily: {
+        serif: ['Playfair Display', 'Georgia', 'serif'],
+        sans:  ['Inter', 'system-ui', 'sans-serif'],
+      },
+      animation: {
+        'fade-in':    'fadeIn 0.6s ease-out',
+        'slide-up':   'slideUp 0.6s ease-out',
+        'slide-right':'slideRight 0.4s ease-out',
+        'float':      'float 6s ease-in-out infinite',
+      },
+      keyframes: {
+        fadeIn:    { from: { opacity: '0' }, to: { opacity: '1' } },
+        slideUp:   { from: { opacity: '0', transform: 'translateY(30px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+        slideRight:{ from: { transform: 'translateX(-100%)' }, to: { transform: 'translateX(0)' } },
+        float:     { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+      },
+    },
+  },
+  plugins: [],
+}
