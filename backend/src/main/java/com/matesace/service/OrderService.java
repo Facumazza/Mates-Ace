@@ -15,8 +15,12 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     private final OrderRepository repo;
+    private final EmailService emailService;
 
-    public OrderService(OrderRepository repo) { this.repo = repo; }
+    public OrderService(OrderRepository repo, EmailService emailService) {
+        this.repo = repo;
+        this.emailService = emailService;
+    }
 
     public Order create(OrderRequest req, User user) {
         Order order = new Order();
@@ -61,6 +65,8 @@ public class OrderService {
         Order order = repo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Orden no encontrada."));
         order.setStatus(status);
-        return repo.save(order);
+        Order saved = repo.save(order);
+        emailService.sendStatusUpdate(saved);
+        return saved;
     }
 }

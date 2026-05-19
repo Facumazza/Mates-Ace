@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, User, Phone, MapPin, CreditCard, AlertCircle } from 'lucide-react'
+import { X, User, Phone, MapPin, Mail, CreditCard, AlertCircle } from 'lucide-react'
 import { useCartStore } from '../store/useCartStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { formatPrice } from '../data/products'
@@ -25,8 +25,15 @@ export default function CheckoutModal({ open, onClose }) {
   const clearCart = useCartStore((s) => s.clearCart)
   const closeCart = useCartStore((s) => s.closeCart)
   const token = useAuthStore((s) => s.token)
+  const currentUser = useAuthStore((s) => s.currentUser)
 
-  const [form, setForm] = useState({ firstName: '', lastName: '', phone: '', address: '' })
+  const [form, setForm] = useState({
+    email: currentUser?.email ?? '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    address: '',
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -52,6 +59,7 @@ export default function CheckoutModal({ open, onClose }) {
             unitPrice: i.product.price,
             variant: i.variant?.value ?? null,
           })),
+          shippingEmail: form.email,
           shippingFirstName: form.firstName,
           shippingLastName: form.lastName,
           shippingPhone: form.phone,
@@ -111,6 +119,7 @@ export default function CheckoutModal({ open, onClose }) {
 
               {/* Form */}
               <div className="flex flex-col gap-3 mb-6">
+                <Field icon={Mail} placeholder="Email" value={form.email} onChange={set('email')} type="email" />
                 <div className="grid grid-cols-2 gap-3">
                   <Field icon={User} placeholder="Nombre" value={form.firstName} onChange={set('firstName')} />
                   <Field icon={User} placeholder="Apellido" value={form.lastName} onChange={set('lastName')} />

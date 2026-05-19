@@ -39,6 +39,8 @@ export default function ProductCard({ product, onQuickView }) {
   }
 
   const badge = product.badge ? BADGE_MAP[product.badge] : null
+  const outOfStock = product.stock === 0
+  const lowStock = product.stock != null && product.stock > 0 && product.stock <= 3
 
   return (
     <motion.article
@@ -76,11 +78,19 @@ export default function ProductCard({ product, onQuickView }) {
           )}
 
           {/* Badge */}
-          {badge && (
+          {outOfStock ? (
+            <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-400 text-white">
+              Sin stock
+            </div>
+          ) : lowStock ? (
+            <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500 text-white">
+              Últimas {product.stock}
+            </div>
+          ) : badge ? (
             <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badge.cls}`}>
               {badge.label}
             </div>
-          )}
+          ) : null}
 
 
           {/* Action buttons - appear on hover */}
@@ -92,15 +102,18 @@ export default function ProductCard({ product, onQuickView }) {
           >
             <button
               onClick={handleAddToCart}
+              disabled={outOfStock}
               className={clsx(
                 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all duration-300',
-                added
-                  ? 'bg-olive-600 text-white'
-                  : 'bg-matte-black hover:bg-olive-600 text-white'
+                outOfStock
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : added
+                    ? 'bg-olive-600 text-white'
+                    : 'bg-matte-black hover:bg-olive-600 text-white'
               )}
             >
               <ShoppingBag size={13} />
-              {added ? '¡Agregado!' : 'Agregar'}
+              {outOfStock ? 'Sin stock' : added ? '¡Agregado!' : 'Agregar'}
             </button>
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onQuickView?.(product) }}

@@ -4,6 +4,7 @@ import java.util.List;
 
 public record CheckoutRequest(
         List<CheckoutItem> items,
+        String shippingEmail,
         String shippingFirstName,
         String shippingLastName,
         String shippingPhone,

@@ -38,19 +38,36 @@ public class CheckoutService {
 
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
+    private final EmailService emailService;
 
-    public CheckoutService(ProductRepository productRepository, OrderRepository orderRepository) {
+    public CheckoutService(ProductRepository productRepository, OrderRepository orderRepository, EmailService emailService) {
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
+        this.emailService = emailService;
     }
+
+    private record Resolved(CheckoutRequest.CheckoutItem item, double price) {}
 
     public Map<String, Object> createOrderAndPreference(CheckoutRequest req, User user) throws Exception {
         MercadoPagoConfig.setAccessToken(accessToken);
 
-        record Resolved(CheckoutRequest.CheckoutItem item, double price) {}
         List<Resolved> resolved = req.items().stream()
                 .map(i -> new Resolved(i, resolvePrice(i)))
                 .toList();
+
+        // Validate stock before creating order
+        for (Resolved r : resolved) {
+            if (r.item().productId() == null) continue;
+            try {
+                long id = Long.parseLong(r.item().productId());
+                productRepository.findById(id).ifPresent(p -> {
+                    if (p.getStock() != null && p.getStock() < r.item().quantity()) {
+                        throw new IllegalStateException(
+                            "Stock insuficiente para \"" + p.getName() + "\". Disponible: " + p.getStock());
+                    }
+                });
+            } catch (NumberFormatException ignored) {}
+        }
 
         double total = resolved.stream().mapToDouble(r -> r.price() * r.item().quantity()).sum();
 
@@ -59,6 +76,7 @@ public class CheckoutService {
         order.setTotal(total);
         order.setChannel("mercadopago");
         order.setStatus("pendiente");
+        order.setShippingEmail(req.shippingEmail());
         order.setShippingFirstName(req.shippingFirstName());
         order.setShippingLastName(req.shippingLastName());
         order.setShippingPhone(req.shippingPhone());
@@ -125,13 +143,35 @@ public class CheckoutService {
         orderRepository.findById(Long.parseLong(externalRef)).ifPresent(order -> {
             order.setStatus(orderStatus);
             orderRepository.save(order);
+            if ("procesando".equals(orderStatus)) {
+                decreaseStock(order);
+                emailService.sendOrderConfirmation(order);
+            }
         });
+    }
+
+    private void decreaseStock(Order order) {
+        if (order.getItems() == null) return;
+        for (OrderItem item : order.getItems()) {
+            if (item.getProductId() == null) continue;
+            try {
+                long productId = Long.parseLong(item.getProductId());
+                productRepository.findById(productId).ifPresent(product -> {
+                    if (product.getStock() != null) {
+                        int newStock = Math.max(0, product.getStock() - item.getQuantity());
+                        product.setStock(newStock);
+                        if (newStock == 0) product.setInStock(false);
+                        productRepository.save(product);
+                    }
+                });
+            } catch (NumberFormatException ignored) {}
+        }
     }
 
     private double resolvePrice(CheckoutRequest.CheckoutItem item) {
         if (item.productId() != null) {
             try {
-                Long id = Long.parseLong(item.productId());
+                long id = Long.parseLong(item.productId());
                 return productRepository.findById(id)
                         .map(p -> p.getPrice())
                         .orElse(item.unitPrice());

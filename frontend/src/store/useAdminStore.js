@@ -65,6 +65,7 @@ function buildPayload(data) {
     variantsJson: data.variants ? JSON.stringify(data.variants) : null,
     badge:        data.badge || null,
     inStock:      data.inStock !== false,
+    stock:        data.stock != null ? Number(data.stock) : null,
     weight:       data.weight || null,
     dimensions:   data.dimensions || null,
   }

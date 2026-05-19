@@ -46,6 +46,7 @@ public class ProductService {
         p.setVariantsJson(req.variantsJson());
         p.setBadge(req.badge());
         p.setInStock(req.inStock() != null ? req.inStock() : true);
+        p.setStock(req.stock());
         p.setWeight(req.weight());
         p.setDimensions(req.dimensions());
         return p;

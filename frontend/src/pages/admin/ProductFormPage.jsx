@@ -28,6 +28,7 @@ const EMPTY_FORM = {
   weight: '',
   dimensions: '',
   inStock: true,
+  stock: '',
   images: [],
   featuresList: [''],
   variants: [],
@@ -69,6 +70,7 @@ export default function ProductFormPage() {
         ...existing,
         price: String(existing.price),
         originalPrice: existing.originalPrice ? String(existing.originalPrice) : '',
+        stock: existing.stock != null ? String(existing.stock) : '',
         featuresList: existing.features?.length ? existing.features : [''],
         variants: existing.variants || [],
       }
@@ -460,6 +462,18 @@ export default function ProductFormPage() {
                     <option key={b.value} value={b.value} className="bg-[#1A1A1A]">{b.label}</option>
                   ))}
                 </select>
+              </Field>
+
+              <Field label="Cantidad en stock">
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={form.stock}
+                  onChange={(e) => set('stock', e.target.value)}
+                  placeholder="Dejar vacío = sin límite"
+                  className="admin-input"
+                />
               </Field>
 
               <label className="flex items-center justify-between cursor-pointer">

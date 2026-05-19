@@ -27,6 +27,7 @@ public class Order {
 
     private String preferenceId;
 
+    private String shippingEmail;
     private String shippingFirstName;
     private String shippingLastName;
     private String shippingPhone;
@@ -49,6 +50,8 @@ public class Order {
     public void setDate(Instant date) { this.date = date; }
     public String getPreferenceId() { return preferenceId; }
     public void setPreferenceId(String preferenceId) { this.preferenceId = preferenceId; }
+    public String getShippingEmail() { return shippingEmail; }
+    public void setShippingEmail(String shippingEmail) { this.shippingEmail = shippingEmail; }
     public String getShippingFirstName() { return shippingFirstName; }
     public void setShippingFirstName(String v) { this.shippingFirstName = v; }
     public String getShippingLastName() { return shippingLastName; }

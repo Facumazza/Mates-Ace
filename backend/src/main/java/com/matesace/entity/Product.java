@@ -45,6 +45,7 @@ public class Product {
 
     private String badge;
     private Boolean inStock = true;
+    private Integer stock;
     private Double weight;
     private String dimensions;
 
@@ -77,6 +78,8 @@ public class Product {
     public void setBadge(String badge) { this.badge = badge; }
     public Boolean getInStock() { return inStock; }
     public void setInStock(Boolean inStock) { this.inStock = inStock; }
+    public Integer getStock() { return stock; }
+    public void setStock(Integer stock) { this.stock = stock; }
     public Double getWeight() { return weight; }
     public void setWeight(Double weight) { this.weight = weight; }
     public String getDimensions() { return dimensions; }
